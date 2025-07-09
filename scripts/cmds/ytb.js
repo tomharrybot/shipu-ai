@@ -85,7 +85,7 @@ module.exports = {
           attachment: await Promise.all(
             videos.map((v) => downloadThumbnail(v.thumbnail, path.join(tmp, `thumb_${v.videoId}.jpg`))
           ),
-        },
+        
         event.threadID,
         (err, info) => {
           global.GoatBot.onReply.set(info.messageID, {
