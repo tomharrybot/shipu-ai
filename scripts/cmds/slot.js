@@ -1,6 +1,6 @@
 module.exports = {
  config: {
- name: "slot",
+ name: "slt",
  version: "1.0",
  author: "Chitron Bhattacharjee",
  shortDescription: {
