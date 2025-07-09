@@ -1,6 +1,6 @@
 module.exports = {
   config: {
-    name: "levelup",
+    name: "setlv",
     aliases: ["setrank", "setlevel", "rankset"],
     version: "2.1",
     author: "Chitron Bhattacharjee",
