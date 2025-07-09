@@ -1,6 +1,6 @@
 module.exports = {
  config: {
- name: "love",
+ name: "lovemp4",
  role: 0,
  author: "Chitron Bhattacharjee",
  countDown: 5,
