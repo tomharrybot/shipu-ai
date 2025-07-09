@@ -1,204 +1,117 @@
+const { loadImage, createCanvas } = require("canvas");
 const fs = require("fs-extra");
-const { createCanvas, loadImage } = require("canvas");
-const axios = require("axios");
-
-const profileSize = 42;
+const path = require("path");
+const https = require("https");
 
 module.exports = {
   config: {
-    name: "gcstats",
+    name: "groupstats",
     version: "1.0",
-    author: "Team Calyx",
-    countDown: 5,
+    author: "Chitron Bhattacharjee",
+    countDown: 10,
     role: 0,
-    shortDescription: {
-      en: "𝗚𝗲𝘁 𝗚𝗿𝗼𝘂𝗽 𝗜𝗺𝗮𝗴𝗲"
-    },
-    longDescription: {
-      en: "𝗚𝗲𝘁 𝗚𝗿𝗼𝘂𝗽 𝗜𝗺𝗮𝗴𝗲"
-    },
-    category: "𝗜𝗠𝗔𝗚𝗘",
-    guide: { en: "{p}{n} --colour [colour] --bgcolour [colour] --admincolour [colour] --membercolour [colour]" },
+    shortDescription: { en: "Group stats image" },
+    longDescription: { en: "Generate an image of group statistics including name, admins, members, avatars." },
+    category: "group",
+    guide: { en: "Say 'groupstats' to trigger" }
   },
 
-  onStart: async function ({ api, event, usersData, message }) {
+  onChat: async function ({ api, event, message, threadsData }) {
+    if (!["groupstats", "group stat", "group info"].includes(event.body?.toLowerCase())) return;
+
     try {
-      const args = event.body.split(" ").slice(1);
-      const options = {
-        colour: "red",
-        bgcolour: null,
-        admincolour: "blue",
-        membercolour: "green",
-      };
-
-      args.forEach((arg, index) => {
-        if (arg === "--colour" && args[index + 1]) {
-          options.colour = args[index + 1];
-        } else if (arg === "--bgcolour" && args[index + 1]) {
-          options.bgcolour = args[index + 1];
-        } else if (arg === "--admincolour" && args[index + 1]) {
-          options.admincolour = args[index + 1];
-        } else if (arg === "--membercolour" && args[index + 1]) {
-          options.membercolour = args[index + 1];
-        }
-      });
-
       const threadInfo = await api.getThreadInfo(event.threadID);
-      const participantIDs = threadInfo.participantIDs;
-      const adminIDs = threadInfo.adminIDs.map((admin) => admin.id);
+      const members = threadInfo.participantIDs || [];
+      const admins = threadInfo.adminIDs?.map(e => e.id) || [];
 
-      const memberProfileImages = await Promise.all(
-        participantIDs.map(async (id) => {
-          try {
-            const avatarUrl = await usersData.getAvatarUrl(id);
-            const response = await axios.get(avatarUrl, { responseType: "arraybuffer" });
-            return response.data;
-          } catch {
-            return null;
-          }
-        })
-      );
-
-      const adminProfileImages = [];
-      const memberProfileImagesFiltered = [];
-      for (let i = 0; i < participantIDs.length; i++) {
-        if (adminIDs.includes(participantIDs[i])) {
-          adminProfileImages.push(memberProfileImages[i]);
-        } else {
-          memberProfileImagesFiltered.push(memberProfileImages[i]);
-        }
-      }
-
-      const numAdmins = adminProfileImages.length;
-      const numMembers = memberProfileImagesFiltered.length;
-
-      const maxImagesPerRow = 10;
-      const gapBetweenImages = 10;
-
-      const totalImages = numAdmins + numMembers;
-      const numRows = Math.ceil(totalImages / maxImagesPerRow);
-
-      const canvasWidth = maxImagesPerRow * (profileSize + gapBetweenImages) - gapBetweenImages + 20;
-      const canvasHeight = numRows * (profileSize + gapBetweenImages) + 170 + 80;
-
+      const canvasWidth = 900, canvasHeight = 500;
       const canvas = createCanvas(canvasWidth, canvasHeight);
       const ctx = canvas.getContext("2d");
 
-      ctx.fillStyle = "rgba(0, 0, 0, 0)";
+      // Styles
+      const options = {
+        colour: "#ffffff",
+        admincolour: "#ff9800",
+        membercolour: "#2196f3"
+      };
+
+      // Background
+      ctx.fillStyle = "#20232a";
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-      if (options.bgcolour) {
-        try {
-          console.log("Loading background image from URL:", options.bgcolour);
-          const backgroundImageResponse = await axios.get(options.bgcolour, { responseType: "arraybuffer" });
-          const backgroundImage = await loadImage(backgroundImageResponse.data);
-          ctx.drawImage(backgroundImage, 0, 0, canvasWidth, canvasHeight);
-          console.log("Background image loaded successfully.");
-        } catch (err) {
-          console.error("Error loading background image:", err);
-        }
-      }
-
-      const threadImageSize = profileSize * 3;
-      const threadImageX = (canvasWidth - threadImageSize) / 2;
-      const threadImageY = 20;
-
-      if (threadInfo.imageSrc) {
-        try {
-          const threadImageResponse = await axios.get(threadInfo.imageSrc, { responseType: "arraybuffer" });
-          const threadImage = await loadImage(threadImageResponse.data);
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(
-            canvasWidth / 2,
-            threadImageY + threadImageSize / 2,
-            threadImageSize / 2,
-            0,
-            Math.PI * 2,
-            true
-          );
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(threadImage, threadImageX, threadImageY, threadImageSize, threadImageSize);
-          ctx.restore();
-
-          ctx.beginPath();
-          ctx.arc(
-            canvasWidth / 2,
-            threadImageY + threadImageSize / 2,
-            threadImageSize / 2 + 3,
-            0,
-            Math.PI * 2,
-            true
-          );
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = "red";
-          ctx.stroke();
-        } catch (err) {
-          console.error("Error loading thread image:", err);
-        }
-      }
-
-      ctx.font = "25px Arial";
+      // Group Name
+      ctx.font = "28px Arial";
       ctx.fillStyle = options.colour;
       ctx.textAlign = "center";
-      ctx.fillText(threadInfo.threadName, canvasWidth / 2, threadImageY + threadImageSize + 30);
+      ctx.fillText(threadInfo.threadName || "Unknown Group", canvasWidth / 2, 50);
 
-      ctx.font = "15px Arial";
-      ctx.fillStyle = "white";
+      // Admins and Members
+      ctx.font = "16px Arial";
       ctx.textAlign = "left";
-
-      ctx.lineWidth = 1;
       ctx.strokeStyle = options.admincolour;
-      ctx.strokeText(`Admins: ${numAdmins}`, 10, threadImageY + threadImageSize + 80);
-      ctx.fillText(`Admins: ${numAdmins}`, 10, threadImageY + threadImageSize + 80);
+      ctx.lineWidth = 1;
+      ctx.strokeText(`Admins: ${admins.length}`, 20, 100);
+      ctx.fillText(`Admins: ${admins.length}`, 20, 100);
 
       ctx.textAlign = "right";
-      ctx.strokeText(`Members: ${numMembers}`, canvasWidth - 10, threadImageY + threadImageSize + 80);
-      ctx.fillText(`Members: ${numMembers}`, canvasWidth - 10, threadImageY + threadImageSize + 80);
+      ctx.strokeText(`Members: ${members.length}`, canvasWidth - 20, 100);
+      ctx.fillText(`Members: ${members.length}`, canvasWidth - 20, 100);
 
-      let x = 10, y = threadImageY + threadImageSize + 100, colIndex = 0;
-      for (const imageBuffer of adminProfileImages.concat(memberProfileImagesFiltered)) {
-        if (!imageBuffer) continue;
-        const image = await loadImage(imageBuffer);
+      // Load profile pictures
+      const profileSize = 60, gap = 15, maxPerRow = 10;
+      let x = 20, y = 130, col = 0;
+      for (let id of admins.concat(members.filter(id => !admins.includes(id))).slice(0, 50)) {
+        const imgBuffer = await downloadImage(`https://graph.facebook.com/${id}/picture?width=100&height=100`);
+        const img = await loadImage(imgBuffer);
 
         ctx.save();
         ctx.beginPath();
-        ctx.arc(x + profileSize / 2, y + profileSize / 2, profileSize / 2, 0, Math.PI * 2, true);
-        ctx.closePath();
+        ctx.arc(x + profileSize / 2, y + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
         ctx.clip();
-        ctx.drawImage(image, x, y, profileSize, profileSize);
-
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = adminProfileImages.includes(imageBuffer) ? options.admincolour : options.membercolour;
-        ctx.stroke();
-
+        ctx.drawImage(img, x, y, profileSize, profileSize);
         ctx.restore();
 
-        colIndex++;
-        x += profileSize + gapBetweenImages;
+        // Border
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = admins.includes(id) ? options.admincolour : options.membercolour;
+        ctx.beginPath();
+        ctx.arc(x + profileSize / 2, y + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
 
-        if (colIndex >= maxImagesPerRow) {
-          colIndex = 0;
-          x = 10;
-          y += profileSize + gapBetweenImages;
+        col++;
+        x += profileSize + gap;
+        if (col >= maxPerRow) {
+          col = 0;
+          x = 20;
+          y += profileSize + gap;
         }
       }
 
-      const outputFile = __dirname + "/cache/group_stats.png";
-      fs.writeFileSync(outputFile, canvas.toBuffer("image/png"));
+      const imgPath = path.join(__dirname, "cache", `groupstats_${event.threadID}.png`);
+      fs.ensureDirSync(path.dirname(imgPath));
+      fs.writeFileSync(imgPath, canvas.toBuffer());
 
-      message.reply({
-        body: "Group statistics:",
-        attachment: fs.createReadStream(outputFile),
+      return message.reply({
+        body: "🧾 Group Statistics",
+        attachment: fs.createReadStream(imgPath)
       });
+
     } catch (err) {
       console.error(err);
-      message.reply(`An error occurred: ${err.message}`);
+      message.reply("❌ Error generating group stats image.");
     }
   },
+
+  onStart: async function () {} // Required for install
 };
 
-<div style="text-align: center;"><div style="position:relative; top:0; margin-right:auto;margin-left:auto; z-index:99999">
-
-</div></div>
+// Image downloader helper
+function downloadImage(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      const data = [];
+      res.on("data", (chunk) => data.push(chunk));
+      res.on("end", () => resolve(Buffer.concat(data)));
+    }).on("error", reject);
+  });
+    }
