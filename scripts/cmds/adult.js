@@ -6,8 +6,7 @@ const { getStreamFromURL } = global.utils;
 
 module.exports = {
  config: {
- name: "adult"
- version: "1.0",
+ name: "adult",
  author: "Chitron Bhattacharjee",
  countDown: 10,
  role: 1,
