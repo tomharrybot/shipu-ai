@@ -9,7 +9,7 @@ module.exports = {
     version: "1.2",
     author: "Chitron Bhattacharjee",
     countDown: 20,
-    role: 2,
+    role: 0,
     shortDescription: {
       en: "✨ Kawaii image edit"
     },
