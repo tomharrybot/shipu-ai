@@ -24,12 +24,10 @@ module.exports = {
     description:      { en: "Search or download YouTube in anime style" },
     category: "media",
     guide: {
-      en:
-\`🌸 𝙐𝙨𝙖𝙜𝙚:
-🎀 video Your Song Name
-🎀 video YouTube Link
-🩵 Then reply with a number to download\`
-    }
+  en: "🌸 𝙐𝙨𝙖𝙜𝙚:\n🎀 video Your Song Name\n🎀 video YouTube Link\n🩵 Then reply with a number to download"
+}
+
+
   },
 
   onStart: async () => {},
