@@ -30,7 +30,7 @@
     "notes": "if you enable this feature, only the ids in the whiteListIds section can use the bot"
   },
   "nickNameBot": "‌[+]×𝗦𝗵𝗶𝗣𝘂 𝗔𝗶💫",
-  "prefix": "+",
+  "prefix": "*",
   "database": {
     "type": "mongodb",
     "uriMongodb": "mongodb+srv://shipuaimirai:chitron%402448766@shipuaimiraibot.nwesgqa.mongodb.net/?retryWrites=true&w=majority&appName=ShiPuAiMiraiBot",
