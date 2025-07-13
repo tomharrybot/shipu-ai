@@ -1,4 +1,4 @@
-globalrequest.js const { getStreamsFromAttachment } = global.utils;
+const { getStreamsFromAttachment } = global.utils;
 const fs = require("fs");
 const path = require("path");
 
